@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-type" content="text/html;charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, user-scalable=yes" />     
+	<meta name="apple-mobile-web-app-capable" content="yes" />    
+	<meta name="mobile-web-app-capable" content="yes" />    
+	<title>Kancolle Terminal</title>
+	<!--jquery-->
+	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+	<!--polymer/element-->
+	<script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+	<link rel="import" href="import.html" />
+	<!--stylesheet-->
+	<link rel="stylesheet" type="text/css" href="kct.css"/>
+	<script type="text/javascript">
+	function noclick() {
+		alert("请将此链接添加到收藏夹!");
+		return false;
+	}
+	</script>
+</head>
+<body fullbleed layout vertical>
+	<template is="auto-binding">
+		<core-header-panel flex>
+			<core-toolbar>
+				Kancolle Terminal
+			</core-toolbar>
+			<div style="padding:3%">
+				<h2>
+					欢迎来到Kancolle Terminal!
+				</h2>
+				<p>
+					在开始前,程序需要获得你的Flash地址(API链接),以正确连接到你所在的服务器和你的账号.
+				</p>
+
+				<span>Flash地址应为类似<code>http://xxx.x.xxx.xxx/kcs/mainD2.swf?api_token=xxx...</code>的URL</span>
+				<form onsubmit="return ajaxlogin()" action="./" method="POST">
+					<paper-input floatingLabel label="Flash URL" value="{{swfurl}}" style="width:80%;font-family:monospace;"></paper-input><br /><br />
+					
+					<core-tooltip label="注意:不使用输入模拟可能导致回港猫(可能Kadokawa增加了一层检查)" class="fancy">
+						<paper-toggle-button checked="{{use_kcid}}"></paper-toggle-button> 使用输入模拟(按键精灵)
+						<paper-icon-button icon="info-outline" onclick="document.querySelector('#kcid_help_window').open()" style="padding:0px;vertical-align:"></paper-icon-button>
+					</core-tooltip>
+					<br /><br />
+					<paper-button raised onclick="ajaxlogin()" style="width:8em"><core-icon icon="check"></core-icon>启动!</paper-button>
+					<paper-spinner active="{{ajaxLoading}}"></paper-spinner>
+				</form>
+				<Br />
+				<div>{{msg}}</div>
+				<br />
+
+				<div>
+					注意:页面需要HTML5,请务必使用常青浏览器进行访问!<br />
+					<b>支持:</b>
+					<ul>
+						<li>Chrome, Firefox, Safari(iOS)</li>
+					</ul>
+					<b>不支持:</b>
+					<ul>
+						<li>Internet Explorer</li>
+						<li>Safari(MacOS) (</li>
+					</ul>
+					请考虑下载Chrome!
+				</div>
+
+			</div>
+		</core-header-panel>
+
+		<!-- Begin KCID Help -->
+		<core-overlay id="kcid_help_window" backdrop fullbleed layout vertical transition="core-transition-top" style="background:white;width:40em;">
+			<core-toolbar>
+				<core-icon icon="info-outline"></core-icon>
+				关于[输入模拟/按键精灵]
+				<span flex>&nbsp;</span>
+				<paper-icon-button icon="close" onclick="document.querySelector('#kcid_help_window').close()"></paper-icon-button>
+			</core-toolbar>
+			<div style="margin:5%">
+				<p>
+					使用输入模拟/按键精灵(KanColle Input Daemon,下简称KCID),可以实现完全无需用户干涉的全自动操作,解决回港等命令的发包层面模拟的困难.
+				</p>
+				<br />
+				<p>
+					使用KCID前,请务必检查以下几点:
+					<ul>
+						<li>你必须使用运行kct的Java本体程序的计算机浏览此页面才能成功完成KCID的初始化</li>
+						<li>KCID和抓包模块需要管理员/root权限,请确保KCT以管理员权限/root身份运行</li>
+						<li>运行Java本体程序的计算机必须保持屏幕常亮且不受干扰</li>
+						<li>(推荐)运行Java本体程序的计算机处在局域网(WLAN/WiFi)或虚拟局域网(VPN)中,且你拥有另一台连接到同一网络的设备(如手机)可以正常打开控制页面.这样你可以安全地控制Java程序而不会意外打乱KCID的运行或被KCID打乱</li>
+						<li>(推荐)关闭一切其他后台程序和自动更新等一切可能弹出窗口覆盖页面或中断程序运行的程序</li>
+						<li>考虑以上两点,建议单独放置虚拟机运行KCT.</li>
+					</ul>
+				</p>
+			</div>
+		</core-overlay>
+		<!-- End Organization Help -->
+		<script type="text/javascript">
+			document.querySelector("#warning_o").remove();
+		</script>
+	</template>
+
+	<script type="text/javascript">
+	var tmpl = document.querySelector("template");
+	tmpl.ajaxLoading = false;
+	tmpl.swfurl = "";
+	tmpl.msg = "";
+	tmpl.use_kcid = true;
+	function ajaxlogin () {
+		tmpl.ajaxLoading = true;
+		$.ajax({
+			url: "api/init",
+			type: "POST",
+			data: {
+				url: tmpl.swfurl,
+				use_kcid: tmpl.use_kcid
+			},
+			dataType: "json",
+			failure: function() {
+				tmpl.ajaxLoading = false;
+				tmpl.msg = "请求失败,请确保Java程序正在运行!";
+			},
+			success: function(data) {
+				if (data.status=="success") {
+					tmpl.ajaxLoading = false;
+					tmpl.msg = "欢迎使用KancolleTerminal, "+data.data.user;
+					if (tmpl.use_kcid) {
+						window.location.assign("daemoninit.html");
+					} else {
+						window.location.assign("index.html");
+					}
+				} else if (data.status=="initdb") {
+					tmpl.msg = "正在初始化数据库,请稍等(小黑船中...)";
+					setTimeout(dbload,500);
+				} else {
+					tmpl.ajaxLoading = false;
+					tmpl.msg = "无效的URL,请确认输入合法的Flash链接:";
+					tmpl.msg += data.reason;
+				}
+			}
+		});
+		return false;
+	}
+	function dbload () {
+		$.ajax({
+			url: "api/dbload",
+			type: "POST",
+			data: {},
+			dataType: "json",
+			failure: function() {
+				tmpl.ajaxLoading = false;
+				tmpl.msg = "请求失败,请确保Java程序正在运行!";
+			},
+			success: function(data) {
+				if (data.status=="success") {
+					tmpl.ajaxLoading = false;
+					tmpl.msg = "欢迎使用KancolleTerminal, "+data.data.user;
+					window.location.assign("index.html");
+				} else if (data.status=="initdb") {
+					// do nothing, keep waiting
+					setTimeout(function(){dbload()},500);
+				} else {
+					tmpl.ajaxLoading = false;
+					tmpl.msg = "无效的URL,请确认输入合法的Flash链接:";
+					tmpl.msg += data.reason;
+				}
+			}
+		});
+	}
+	</script>
+	<div style="color:red" id="warning_o">
+		注意:页面需要HTML5,请务必使用常青浏览器进行访问!<br />
+		<b>支持:</b>
+		<ul>
+			<li>Chrome, Firefox, Safari(iOS)</li>
+		</ul>
+		<b>不支持:</b>
+		<ul>
+			<li>Internet Explorer</li>
+			<li>Safari(MacOS) (</li>
+		</ul>
+		请考虑下载Chrome!
+	</div>
+
+</body>
+</html>

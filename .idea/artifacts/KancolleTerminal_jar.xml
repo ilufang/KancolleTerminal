@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="KancolleTerminal:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/KancolleTerminal_jar</output-path>
+    <root id="archive" name="KancolleTerminal.jar">
+      <element id="module-output" name="KancolleTerminal" />
+      <element id="directory" name="www">
+        <element id="dir-copy" path="$PROJECT_DIR$/www" />
+      </element>
+    </root>
+  </artifact>
+</component>

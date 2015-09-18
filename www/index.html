@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-type" content="text/html;charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, user-scalable=yes" />     
+	<meta name="apple-mobile-web-app-capable" content="yes" />    
+	<meta name="mobile-web-app-capable" content="yes" />    
+	<title>Kancolle Terminal</title>
+	<!--jquery-->
+	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script type="text/javascript" src="bower_components/jquery.cookie/jquery.cookie.js"></script>
+	<!--polymer/element-->
+	<script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+	<link rel="import" href="import.html" />
+	<!--stylesheet-->
+	<link rel="stylesheet" type="text/css" href="kct.css"/>
+	<!--app-->
+	<script type="text/javascript" src="kct.js"></script>
+	<script type="text/javascript" src="sparkle.js"></script>
+	<script type="text/javascript" src="battle15.js"></script>
+	<script type="text/javascript" src="resfarm.js"></script>
+	<script type="text/javascript" src="e2unryuu.js"></script>
+</head>
+<body fullbleed fit layout>
+	<template is="auto-binding">
+		<core-drawer-panel>
+			<core-header-panel drawer style="background-color:#fff3e0;" shadow>
+				<core-toolbar class="medium-tall">
+					<div style="font-size:0.6em">{{userinfo}}</div>
+					<div class="bottom">Kancolle Terminal</div>
+				</core-toolbar>
+				<core-menu selected="{{page}}" style="margin:0px" valueattr="page-name">
+					<paper-item page-name="dashboard" class="navItem"><core-icon icon="dashboard"></core-icon>Home</paper-item>
+					<paper-item page-name="arsenal" class="navItem"><core-icon icon="store"></core-icon>工厂</paper-item>
+					<paper-item page-name="sally" class="navItem"><core-icon icon="explore"></core-icon>出击</paper-item>
+					<paper-item page-name="organize" class="navItem"><core-icon icon="list"></core-icon>编成</paper-item>
+					<paper-item page-name="settings" class="navItem"><core-icon icon="settings"></core-icon>设置</paper-item>
+					<!--paper-item page-name="scheduler" class="navItem"><core-icon icon="schedule"></core-icon>计划任务</paper-item-->
+				</core-menu>
+			</core-header-panel>
+			<core-header-panel main style="background-color:#fff3e0" shadow>
+				<core-toolbar id="responsive-toolbar">
+					<paper-icon-button icon="menu" id="menutoggle" core-drawer-toggle></paper-icon-button>
+					<span id="page_title">{{pagetitles[page]}}</span>
+					<span flex>&nbsp;</span>
+					<paper-spinner active="{{ajaxLoading}}"></paper-spinner>
+				</core-toolbar>
+				<core-animated-pages selected="{{page}}" valueattr="page-name" transitions="cross-fade">
+					<section page-name="dashboard">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">Welcome</h1>
+							<p id="splash">
+								欢迎来到KancolleTerminal.<br />
+								在同一局域网内,这个管理页面也可以通过任何其他设备访问,如手机,平板电脑或另外一台计算机,且这一页面与移动设备兼容.<br />
+								要打开这一页面,请在设备的浏览器(要求兼容HTML5,推荐Chrome)中打开以下地址:<br />
+								<code>{{lan_addr}}</code><br />
+								注意:远程控制(比如手机控制家中KCT)的实现会比较麻烦,推荐将宿主机和您正在使用的手机/计算机连接到同一个VPN虚拟局域网(要求<code>client-to-client</code>已打开).如果你希望透过互联网IP进行连接,请详细了解Internet IP和路由器端口转发相关内容进行设置.
+							</p>
+							<hr />
+							<p>
+								Kancolle本地服务器正在运行,仅使用本地服务器不会有任何可能检测到的非正常发包行为,可以完全安全地使用:<br />
+								<a href="{{localsvr}}" target="_blank">{{localsvr}}</a><br />
+								透过本地服务器可以加快游戏加载速度(强制缓存),减少猫错误.同时本地服务器会在发接包时记录建造,掉落等日志并存储与本地,你可以在设置页面中将其导出为可以由Excel打开的csv(逗号分隔值).
+							</p>
+						</div>
+					</section>
+					<section page-name="arsenal">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+							<paper-tabs selected="{{arsenal_page}}" valueattr="page-name" transitions="">
+								<paper-tab page-name="buildstatus">工厂状态</paper-tab>
+								<paper-tab page-name="construct">建造</paper-tab>
+								<paper-tab page-name="develop">开发</paper-tab>
+							</paper-tabs>
+							<core-animated-pages flex selected="{{arsenal_page}}" valueattr="page-name" transition="cross-fade" style="height:40em;margin:5%;">
+								<section page-name="buildstatus">
+									<div>
+										<paper-icon-button icon="refresh" onclick="loadBuildDock()"></paper-icon-button>
+									</div>
+									<div id="bdock">
+									</div>
+								</section>
+								<section page-name="construct">
+										<table style="border:none;font-size:1.6em">
+										<tr>
+											<td>
+												<paper-input value="{{cfuel}}" floatingLabel label="燃料"></paper-input>
+											</td>
+											<td>
+												<paper-input value="{{csteel}}" floatingLabel label="钢材"></paper-input>
+											</td>
+										</tr>
+										<tr>
+											<td>
+												<paper-input value="{{cammo}}" floatingLabel label="弹药"></paper-input>
+											</td>
+											<td>
+												<paper-input value="{{cbaux}}" floatingLabel label="铝"></paper-input>
+											</td>
+										</tr>
+									</table>
+									<core-tooltip class="fancy" label="仅大建有效,请务必如实填写">
+										<paper-input value="{{cseaweed}}" floatingLabel label="开发资材"></paper-input>
+									</core-tooltip>
+									<br /><br />
+									<div layout horizontal>
+										<core-tooltip label="消耗数量与是否大建有关" class="fancy">
+											高速建造&nbsp;&nbsp;<paper-toggle-button checked="{{cfire}}"></paper-toggle-button>
+										</core-tooltip>
+										<span flex>&nbsp;</span>
+										<core-tooltip label="请确保大建已解锁,慎重批量大建" class="fancy">
+											大型舰建造&nbsp;&nbsp;<paper-toggle-button checked="{{clarge}}"></paper-toggle-button>
+										</core-tooltip>
+									</div>
+									<br />
+									<div layout horizontal>
+										<core-tooltip label="仅[高速建造]开启时有效" class="fancy">
+											<paper-input value="{{ccount}}" floatingLabel label="建造次数"></paper-input>
+										</core-tooltip>
+										<span flex>&nbsp;</span>
+										<paper-spinner active="{{ajaxLoading}}"></paper-spinner>
+										<paper-button raised onclick="construct()" style="font-size:1.5em;height:100%">建造</paper-button>
+									</div>
+
+								</section>
+								<section page-name="develop">
+									<table style="border:none;font-size:1.6em">
+										<tr>
+											<td>
+												<paper-input value="{{dfuel}}" floatingLabel label="燃料"></paper-input>
+											</td>
+											<td>
+												<paper-input value="{{dsteel}}" floatingLabel label="钢材"></paper-input>
+											</td>
+										</tr>
+										<tr>
+											<td>
+												<paper-input value="{{dammo}}" floatingLabel label="弹药"></paper-input>
+											</td>
+											<td>
+												<paper-input value="{{dbaux}}" floatingLabel label="铝"></paper-input>
+											</td>
+										</tr>
+									</table>
+									<paper-input value="{{dcount}}" floatingLabel label="开发次数"></paper-input>
+									<div align="right">
+										<paper-spinner active="{{ajaxLoading}}"></paper-spinner>
+										<paper-button raised onclick="develop()" style="font-size:1.5em">开发</paper-button>
+									</div>
+								</section>
+								<section page-name="result">
+									<div style="font-size:1.5em" id="arsenal_result">
+									</div>
+								</section>
+							</core-animated-pages>
+						</div>
+					</section>
+
+					<section page-name="sally">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+							<span>相关参数可以在<a href="javascript:void(0)" onclick="tmpl.page='settings'">设置</a>页面中调整.</span>
+							<core-menu valueattr="deckno" selected="{{activeDeck}}" id="sally_deck_selector">
+							</core-menu>
+							<br /><hr /><br />
+							<div layout horizontal>
+								<h2 style="display:inline" flex>单点自动肝船</h2>
+								<paper-button raised onclick="battle15()" style="-webkit-margin-before:0.83em;-webkit-margin-after:0.83em;height:100%">开始</paper-button>
+							</div>
+							<div layout horizontal>
+								<core-tooltip label="无检查,请务必填写合法值" class="fancy" position="top">
+									<span>地图:</span>
+									<paper-dropdown-menu label="海域">
+									    <paper-dropdown class="dropdown">
+									        <core-menu class="menu" selected="{{major_map}}" valueattr="node">
+									            <paper-item node="1">1</paper-item>
+									            <paper-item node="2">2</paper-item>
+									            <paper-item node="3">3</paper-item>
+									            <paper-item node="4">4</paper-item>
+									            <paper-item node="5">5</paper-item>
+									            <paper-item node="6">6</paper-item>
+									            <paper-item node="30">E</paper-item>
+									        </core-menu>
+									    </paper-dropdown>
+									</paper-dropdown-menu>
+									<span>&nbsp;-&nbsp;</span>
+									<paper-dropdown-menu label="地图">
+									    <paper-dropdown class="dropdown">
+									        <core-menu class="menu" selected="{{minor_map}}" valueattr="node">
+									            <paper-item node="1">1</paper-item>
+									            <paper-item node="2">2</paper-item>
+									            <paper-item node="3">3</paper-item>
+									            <paper-item node="4">4</paper-item>
+									            <paper-item node="5">5</paper-item>
+									            <paper-item node="6">6</paper-item>
+									        </core-menu>
+									    </paper-dropdown>
+									</paper-dropdown-menu>
+								</core-tooltip>
+
+								<span flex>&nbsp;</span>
+								<core-tooltip class="fancy" label="关于半自动肝船">
+									<paper-icon-button icon="info-outline" onclick="document.querySelector('#battle15_help_window').open()"></paper-icon-button>
+								</core-tooltip>
+								<core-tooltip class="fancy" label="返回半自动肝船页面">
+									<paper-icon-button icon="exit-to-app" onclick="tmpl.page='battle15'"></paper-icon-button>
+								</core-tooltip>
+							</div>
+							<br /><hr /><br />
+							<div layout horizontal>
+								<h2 style="display:inline" flex>自动资源打捞</h2>
+								<paper-button raised onclick="resFarm()" style="-webkit-margin-before:0.83em;-webkit-margin-after:0.83em;height:100%">开始</paper-button>
+							</div>
+							<div layout horizontal>
+								<core-tooltip label="" class="fancy" position="top">
+									<span>地图:</span>
+									<paper-dropdown-menu label="资源海域">
+									    <paper-dropdown class="dropdown">
+									        <core-menu class="menu" selected="{{resfarm_map}}" valueattr="node">
+									            <paper-item node="1-2">1-2(弹药)</paper-item>
+									            <paper-item node="1-4">1-4(弹药,钢材)</paper-item>
+									            <paper-item node="2-2">2-2(铝)</paper-item>
+									            <paper-item node="2-3">2-3(燃料)</paper-item>
+									        </core-menu>
+									    </paper-dropdown>
+									</paper-dropdown-menu>
+								</core-tooltip>
+
+								<span flex>&nbsp;</span>
+								<core-tooltip class="fancy" label="关于资源打捞">
+									<paper-icon-button icon="info-outline" onclick="document.querySelector('#resfarm_help_window').open()"></paper-icon-button>
+								</core-tooltip>
+								<core-tooltip class="fancy" label="返回资源打捞页面">
+									<paper-icon-button icon="exit-to-app" onclick="tmpl.page='resfarm'"></paper-icon-button>
+								</core-tooltip>
+							</div>
+							<br /><hr /><br />
+							<div layout horizontal>
+								<h2 style="display:inline" flex>E2捞云龙</h2>
+								<paper-button raised onclick="resFarm()" style="-webkit-margin-before:0.83em;-webkit-margin-after:0.83em;height:100%" disabled>捞</paper-button>
+							</div>
+							<br /><hr /><br />
+						</div>
+					</section>
+
+					<section page-name="organize">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+							<paper-icon-button icon="refresh" onclick="loadFleetOrg()"></paper-icon-button>
+							<paper-icon-button icon="info-outline" onclick="document.querySelector('#org_help_window').open()"></paper-icon-button>
+							<span flex>&nbsp;</span>
+							<paper-spinner active="{{ajaxLoading}}"></paper-spinner>
+							<div id="fleet">
+							</div>
+						</div>
+					</section>
+
+					<section page-name="scheduler">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+						</div>
+					</section>
+
+					<!-- Begin Battle1-5 Window -->
+					<section page-name="battle15">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+							<div>
+								<paper-icon-button icon="arrow-back" id="battle15_quit" onclick="tmpl.page='sally'"></paper-icon-button>
+							</div>
+							<b>尽管你可以,但不建议提前离开此页面,很可能导致猫或暂时封号</b><Br />
+							<paper-progress style="width:100%" value="{{progress_15}}"></paper-progress>
+							<p style="font-size:1.1em;font-weight:bold">{{status}}</p>
+							<Br />
+							<code id="result15" style="display:block;padding:5%;"></code>
+							<br />
+							<div>
+								<paper-button raised onclick="battle15Continue(true)" id="battle15_btns">
+									<core-icon icon="done"></core-icon>继续
+								</paper-button>
+								&nbsp;
+								<paper-button onclick="terminate=true" class="plain">
+									<core-icon icon="close"></core-icon>结束
+								</paper-button>
+							</div>
+						</div>
+					</section>
+					<!-- End Battle1-5 Window -->
+
+					<!-- Begin ResFarm Window -->
+					<section page-name="resfarm">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+							<div>
+								<paper-icon-button icon="arrow-back" id="resfarm_quit" onclick="tmpl.page='sally'"></paper-icon-button>
+							</div>
+							<b>尽管你可以,但不建议提前离开此页面,很可能导致猫或暂时封号</b><Br />
+							<h3>{{resfarm_map}}</h3><hr />
+							<b>{{status}}</b><Br />
+							<!--code>{{resfarm_result}}</code-->
+							<table class="code_table">
+								<tr>
+									<th width="20%"></th>
+									<th width="40%">已出击 {{resfarm_count}} 次</th>
+									<th width="40%">用时 {{resfarm_time}}</th>
+								</tr>
+								<tr>
+									<td>油</td>
+									<td>{{resfarm_fuel}}</td>
+									<td>{{resfarm_fuel_rate}}/h</td>
+								</tr>
+								<tr>
+									<td>弹</td>
+									<td>{{resfarm_ammo}}</td>
+									<td>{{resfarm_ammo_rate}}/h</td>
+								</tr>
+								<tr>
+									<td>钢</td>
+									<td>{{resfarm_steel}}</td>
+									<td>{{resfarm_steel_rate}}/h</td>
+								</tr>
+								<tr>
+									<td>铝</td>
+									<td>{{resfarm_baux}}</td>
+									<td>{{resfarm_baux_rate}}/h</td>
+								</tr>
+							</table>
+							<hr>
+							<div layout horizontal>
+								<span flex>&nbsp;</span>
+								<paper-button raised onclick="rfworking=false">终止</paper-button>
+							</div>
+						</div>
+					</section>
+					<!-- End ResFarm Window -->
+
+					<!-- Begin E2 Window -->
+					<section page-name="e2u">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1><br />
+							<code style="display:block; margin:5%; padding:5%" id="e2udata"></code>
+							<paper-button onclick="e2working=false">Stop</paper-button>
+						</div>
+					</section>
+					<!-- End E2 Window -->
+
+					<section page-name="settings">
+						<div cross-fade class="main_card">
+							<h1 class="card_title">{{pagetitles[page]}}</h1>
+							<p>
+								此页面中的设置会通过Cookies存储在浏览器中,下次在<b>同一浏览器</b>中启动无需再次设置,但不同的浏览器间不会传递数据.
+							</p>
+							<hr>
+							<h2>出击劝退判断</h2>
+							<p>当舰队中存在船只符合以下判断条件时,战斗程序的执行将被终止,请务必谨慎选择!</p>
+							<div layout horizontal>
+								<span>耐久阀值</span>
+								<paper-slider flex class="pref" min="0" max="100" immediateValue="{{hp_threshold}}"></paper-slider>
+								<paper-input class="pref" style="width:2em" value="{{hp_threshold}}"></paper-input>
+							</div>
+							<div layout horizontal>
+								<span>心情阀值</span>
+								<paper-slider flex class="pref" min="0" max="100" immediateValue="{{cond_threshold}}"></paper-slider>
+								<paper-input class="pref" style="width:2em" value="{{cond_threshold}}"></paper-input>
+							</div>
+
+							<div>
+								<br />
+								<hr />
+								<h2>导出本地服务器监听日志为CSV表格</h2>
+								<br />
+								<paper-button onclick="exportDrops()">导出掉落日志</paper-button>
+								<span>&nbsp;</span>
+								<paper-button onclick="exportBuilds()">导出建造/开发日志</paper-button>
+
+							</div>
+							<div>
+							<br />
+							<hr />
+							<h2>关闭服务器</h2>
+							<p>
+								关闭网页<b>不会</b>停止后台Java程序的运行,你仍然可以通过打开这一页面回复与Java程序的连接.<br />
+								要彻底结束Java程序,请使用下面的按钮.
+							</p>
+							<paper-button onclick="shutdown()" raised style="width:12em;">
+								<core-icon icon="settings-power"></core-icon>
+								退出Java服务器
+							</paper-button>
+						</div>
+					</section>
+
+				</core-animated-pages>
+
+			</core-header-panel>
+
+		</core-drawer-panel>
+		
+		<paper-toast text="{{errmsg}}" id="toast_general_error"></paper-toast>
+
+		<!-- Begin Sparkle Window -->
+		<core-overlay id="sparkle_window" autoclosedisabled backdrop fullbleed layout vertical transition="core-transition-center" style="background:white;width:50em;">
+			<paper-progress value="{{sparkle_progress}}" style="width:100%;"></paper-progress>
+			<div align="right"><paper-icon-button icon="close" onclick="document.querySelector('#sparkle_window').close()" style="display:none;" id="btn_close_sparkle"></paper-icon-button></div>
+			<div style="padding:5%">
+				<b>{{status}}</b><br/>
+				<h1>{{objShip}}</h1>
+				<h3>{{auxShip}}</h3>
+				<p>{{sparkleResult}}</p>
+				<paper-button raised id="spPauseBtn" style="display:none" onclick="spSupply(true)"><core-icon icon="done"></core-icon>继续</paper-button>
+			</div>
+		</core-overlay>
+		<!-- End Sparkle Window -->
+
+		<!-- Begin Organization Help -->
+		<core-overlay id="org_help_window" backdrop fullbleed layout vertical transition="core-transition-top" style="background:white;width:40em;">
+			<core-toolbar>
+				<core-icon icon="info-outline"></core-icon>
+				关于[编成]
+				<span flex>&nbsp;</span>
+				<paper-icon-button icon="close" onclick="document.querySelector('#org_help_window').close()"></paper-icon-button>
+			</core-toolbar>
+			<div style="margin:5%">
+				<b>此页面提供与编成页面相关的操作</b><br />
+				<h2>自动刷闪(Java给粮舰)</h2><hr />
+				<p>
+					通过程序自动进行1-1/1-5单点进行快速心情值(士气/疲劳)的上升.
+				</p>
+				<b>注意事项</b>
+				<p>
+					<ul>
+						<li><b>船只必须不处于疲劳状态<b>,所有橙脸/红脸船只(心情低于30)均不可使用,请等待心情自动恢复至至少30再进行刷闪</li>
+						<li>驱逐舰由于射程(和火力)缘故请务必使用1-5,其他船只可使用1-1</li>
+						<li>任何<b>潜水舰</b>不可使用此方式刷闪</li>
+						<li>船只所在舰队必须不处于<b>联合舰队</b>状态</li>
+						<li>1-5只适用驱逐舰,轻巡洋舰等可以攻击潜艇的船只.刷闪前请<b>务必带好反潜装备</b></li>
+						<li>使用1-5请务必确保1-5地图已解锁</li>
+						<li>刷闪前请注意检查舰队不处于远征状态,船只不处于入渠状态</li>
+						<li>此方法会消耗资源,消耗量为3次昼战,请自行斟酌</li>
+					</ul>
+				</p>
+				<b>用法</b>
+				<p>
+					<ul>
+						<li>确认船只和舰队符合出击条件</li>
+						<li>对于1-5,带好反潜装备</li>
+						<li>选择相应船只点击刷闪按钮</li>
+						<li>等待进度</li>
+						<li>提示刷新母港时,刷新母港后按继续(详细见下文)</li>
+						<li>若船只受损超过总耐久一半,船只将会被劝退</li>
+					</ul>
+				</p>
+				<b>刷新母港</b>
+				<p>
+					出击状态下,任何补给/变成等命令都会失败(猫),所以在执行这些命令前必须刷新母港解除出击状态.<br />
+					目前回港命令有一个鬼畜参数程序无法模拟,所以需要用户通过游戏手动生成这一指令,程序方可继续执行<br /><br />
+					<ol>
+						<li>请在Flash中切换至任何非母港页面(如编成)</li>
+						<li>不要进行<b>任何操作</b>,任何操作都非常有可能导致猫(有可能导致临时封号)</li>
+						<li>点击"母港"或左上角大圆按钮</li>
+						<li>等待加载,至母港(有秘书舰和家具的)页面完全加载后,回到程序点继续</li>
+					</ol>
+					(这一操作预计在下一版中通过输入模拟(类似按键精灵)自动完成)
+				</p>
+			</div>
+		</core-overlay>
+		<!-- End Organization Help -->
+
+		<!-- Begin Battle1-5 Help -->
+		<core-overlay id="battle15_help_window" backdrop fullbleed layout vertical transition="core-transition-top" style="background:white;width:40em;">
+			<core-toolbar>
+				<core-icon icon="info-outline"></core-icon>
+				关于[单点半自动肝船]
+				<span flex>&nbsp;</span>
+				<paper-icon-button icon="close" onclick="document.querySelector('#battle15_help_window').close()"></paper-icon-button>
+			</core-toolbar>
+			<div style="margin:5%">
+				<p>
+					通过自动出击快速获得经验进行升级
+				</p>
+				<b>注意事项</b>
+				<ul>
+					<li>请酌情去设置页面设置劝退相关的耐久阀值和心情阀值</li>
+					<li>每次会出击3轮,每轮都只会战斗第一节点,3轮后才会回港</li>
+					<li>程序对出击地图没有任何识别操作,无论是1-1还是E6都会直接出击,请务必正确填写</li>
+					<li>出击地图必须已经解锁,出击船只必须不在入渠状态,出击舰队必须不在远征状态</li>
+					<li>出击前请调整好装备和变成,程序不会做任何修改</li>
+					<li>资源消耗请自行考虑</li>
+					<li>推荐只用有稳定无伤把握的地图,如1-5和3-2</li>
+					<li>出击频率极高,但只有被回港(你会被要求手动回港)时才会对舰队心情做-15的出击惩罚,请自行考虑心情控制</li>
+				</ul>
+				<b>用法</b>
+				<p>
+					<ul>
+						<li>配好要出击的舰队并安放合适的装备</li>
+						<li>确认船只和舰队符合出击条件</li>
+						<li>在设置页面中选择劝退的心情值和耐久值</li>
+						<li>选择舰队,点出击</li>
+						<li>等待进度</li>
+						<li>提示刷新母港时,刷新母港后按继续(详细见下文)</li>
+						<li>结束肝船请按结束</li>
+					</ul>
+				</p>
+				<b>刷新母港</b>
+				<p>
+					出击状态下,任何补给/变成等命令都会失败(猫),所以在执行这些命令前必须刷新母港解除出击状态.<br />
+					目前回港命令有一个鬼畜参数程序无法模拟,所以需要用户通过游戏手动生成这一指令,程序方可继续执行<br /><br />
+					<ol>
+						<li>请在Flash中切换至任何非母港页面(如编成)</li>
+						<li>不要进行<b>任何操作</b>,任何操作都非常有可能导致猫(有可能导致临时封号)</li>
+						<li>点击"母港"或左上角大圆按钮</li>
+						<li>等待加载,至母港(有秘书舰和家具的)页面完全加载后,回到程序点继续</li>
+					</ol>
+					(这一操作预计在下一版中通过输入模拟(类似按键精灵)自动完成)
+				</p>
+			</div>
+		</core-overlay>
+		<!-- End Organization Help -->
+
+		<!-- Begin Resource Farming Help -->
+		<core-overlay id="resfarm_help_window" backdrop fullbleed layout vertical transition="core-transition-top" style="background:white;width:40em;">
+			<core-toolbar>
+				<core-icon icon="info-outline"></core-icon>
+				关于[自动资源打捞]
+				<span flex>&nbsp;</span>
+				<paper-icon-button icon="close" onclick="document.querySelector('#resfarm_help_window').close()"></paper-icon-button>
+			</core-toolbar>
+			<div style="margin:5%">
+				<p>
+					通过自动出击第一点为资源的地图较快速获取资源
+				</p>
+				<b>注意事项</b>
+				<ul>
+					<li><b>此功能相当高能,慎用</b></li>
+					<li><b>此功能需要已经初始化按键精灵才能正常使用</b></li>
+					<li>出击舰队不参与战斗,但会消耗资源,请带单只低消耗船只</li>
+					<li>打捞资源期间不可进行任何其他操作</li>
+					<li>出击地图必须已经解锁,出击船只必须不在入渠状态,出击舰队必须不在远征状态</li>
+				</ul>
+				<b>用法</b>
+				<p>
+					<ul>
+						<li>请将选定低消耗船只(推荐DD或SS)单只防止在出击舰队中</li>
+						<li>确认船只和舰队符合出击条件</li>
+						<li>点击开始</li>
+						<li>结束请按终止</li>
+					</ul>
+				</p>
+			</div>
+		</core-overlay>
+		<!-- End Resource Farming Help -->
+
+
+		<script type="text/javascript">
+		// Event listeners
+		$(".navItem").click(function() {
+			document.querySelector("core-drawer-panel").closeDrawer();
+		});
+
+		
+		document.querySelector("core-drawer-panel").addEventListener("core-responsive-change",function(e) {
+			if (e.detail.narrow) {
+				document.querySelector("core-header-panel[main]").mode="standard";
+				$("#responsive-toolbar").removeClass("medium-tall");
+			} else {
+				document.querySelector("core-header-panel[main]").mode="cover";
+				$("#responsive-toolbar").addClass("medium-tall");
+			}
+		});
+
+		var pref_sliders = document.querySelectorAll("paper-slider.pref");
+		for (var i = pref_sliders.length - 1; i >= 0; i--) {
+			pref_sliders[i].addEventListener("change",savePrefs);
+		};
+		var pref_input = document.querySelectorAll("paper-input.pref");
+		for (var i = pref_input.length - 1; i >= 0; i--) {
+			pref_input[i].addEventListener("change",savePrefs);
+		};
+		tmpl.cond_threshold=30;
+		tmpl.hp_threshold=50;
+		if ($.cookie("cond_threshold")) {
+			tmpl.cond_threshold=$.cookie("cond_threshold");
+		} else {
+			$.cookie("cond_threshold",30,{expires: 3650});
+			tmpl.cond_threshold=30;
+		}
+		if ($.cookie("hp_threshold")) {
+			tmpl.hp_threshold=$.cookie("hp_threshold");
+		} else {
+			$.cookie("hp_threshold",50,{expires: 3650});
+			tmpl.hp_threshold=50;
+		}
+		function savePrefs(){
+			$.cookie("hp_threshold",tmpl.hp_threshold,{expires: 3650});
+			$.cookie("cond_threshold",tmpl.cond_threshold,{expires:3650});
+		}
+		</script>
+
+		<script type="text/javascript">
+		// Init
+		$.ajax({
+			url: "api/userinfo",
+			data:{},
+			dataType: "json",
+			success: function (data) {
+				tmpl.userinfo = data.data.api_nickname+" (Lv."+data.data.api_level+")";
+				tmpl.lan_addr = data.serveraddr;
+				tmpl.localsvr = data.localsvr;
+				loadFleetOrg();
+				loadBuildDock();
+			},
+			failure: function() {
+				ajaxError();
+			}
+		});
+		function periodicUpdateScheduler() {
+			periodicUpdate();
+			setTimeout(periodicUpdateScheduler,30*1000);
+		}
+
+		periodicUpdateScheduler();
+
+		</script>
+
+	</template>
+
+		<script type="text/javascript">
+	// Auto-binding variables initialization
+	var tmpl = document.querySelector("template");
+	tmpl.sparkle_progress=0;
+	tmpl.progress_15=0;
+	tmpl.activeDeck=1;
+	tmpl.page="dashboard";
+	tmpl.userinfo="";
+	tmpl.dfuel="";
+	tmpl.dammo="";
+	tmpl.dsteel="";
+	tmpl.dbaux="";
+	tmpl.dcount="";
+	tmpl.cfuel="";
+	tmpl.cammo="";
+	tmpl.csteel="";
+	tmpl.cbaux="";
+	tmpl.ccount="";
+	tmpl.cfire=false;
+	tmpl.clarge=false;
+	tmpl.cseaweed="";
+	tmpl.major_map="1";
+	tmpl.minor_map="5";
+	tmpl.resfarm_map="";
+	tmpl.localsvr="";
+	tmpl.ajaxLoading = false;
+	tmpl.pagetitles = [];
+	tmpl.pagetitles['dashboard']="Welcome";
+	tmpl.pagetitles['arsenal']="工厂";
+	tmpl.pagetitles['sally']="出击";
+	tmpl.pagetitles['organize']="编成";
+	tmpl.pagetitles['scheduler']="计划任务";
+	tmpl.pagetitles['battle15']="单点半自动肝船";
+	tmpl.pagetitles['resfarm']="资源打捞";
+	tmpl.pagetitles['settings']="设置";
+	tmpl.pagetitles['e2u']="E2捞云龙";
+	</script>
+
+</body>
+</body>
+</html>

@@ -1,0 +1,6 @@
+*.swf
+*.csv
+*.json
+kcscache/
+out/
+screencap.png

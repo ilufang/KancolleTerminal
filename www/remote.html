@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+	<title>Kancolle Terminal/KCID</title>
+	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+	<h2>欢迎使用KancolleTerminal/KCID</h2>
+	<br />
+	<p>
+		您目前正在使用带有按键输入模拟版本的KCT,为了确保程序的稳定运行,以及不打扰您正常使用计算机,请使用另一台设备在同一局域网内(Wifi/VPN)访问以下地址:
+	</p>
+	<code id="addr"></code>
+	<p>
+		然而在进行任何操作前,请先在本机的Kancolle(由Java打开的)动画页面中,进入[入渠]页面,程序方可正常运行.
+	</p>
+	<script type="text/javascript">
+		$.ajax({
+			url: "api/userinfo",
+			data:{},
+			dataType: "json",
+			success: function (data) {
+				document.querySelector("#addr").innerHTML = data.serveraddr;
+			}
+		});
+	</script>
+</body>
+</html>
