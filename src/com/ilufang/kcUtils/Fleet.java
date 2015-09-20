@@ -19,8 +19,11 @@ public class Fleet {
         ships = new GetFleetRequest(session).request();
     }
 
-    public void update() throws Exception {
-        /*
+    public void update() {
+        System.out.println("Fleet is not updated.");
+    }
+
+    public void forceUpdate() throws Exception {
         List<Ship> newships = new GetFleetRequest(session).request();
         for (Ship ship : ships) {
             ship.update_flag = false;
@@ -34,7 +37,6 @@ public class Fleet {
                 ships.remove(i);
             }
         }
-        */
     }
 
     public void update(JSONArray fleet) throws Exception {

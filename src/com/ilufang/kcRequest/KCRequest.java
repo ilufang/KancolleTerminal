@@ -51,7 +51,7 @@ public abstract class KCRequest {
         con.setRequestProperty("Content-Length", Integer.toString( postDataLength));
         con.setRequestProperty("X-Requested-With", "ShockwaveFlash/17.0.0.134");
         con.setRequestProperty("Referer", url_from+"/[[DYNAMIC]]/1");
-        con.setRequestProperty("Accept-Encoding", "gzip, deflate");
+        //con.setRequestProperty("Accept-Encoding", "gzip, deflate");
         con.setRequestProperty("Accept-Language", "en-US,en;q=0.8,ja;q=0.6,zh;q=0.4,zh-TW,q=0.2");
 
         // Write Post data

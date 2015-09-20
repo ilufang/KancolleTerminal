@@ -162,6 +162,10 @@ public class Session {
             case "download":
                 db.fetchShipSwf(Integer.parseInt(args[1]));
                 break;
+            case "destroyAll":
+                DestroyAll destroy = new DestroyAll(this);
+                destroy.destroy();
+                break;
             case "req":
                 CustomRequest req;
                 if (args.length == 1) {
